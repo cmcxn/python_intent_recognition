@@ -28,10 +28,18 @@ chinese_intent_recognition/
 ├── requirements.txt          # Python dependencies  
 ├── train_intent.py          # Chinese RoBERTa training script
 ├── intent_infer.py          # Chinese inference script
+├── intent_api.py            # FastAPI web service
+├── test_api.sh              # API test cases (curl commands)
 ├── test_chinese_system.py   # Comprehensive system test
 ├── dataset/
 │   ├── __init__.py
 │   └── dataset_creator.py    # Chinese dataset generation
+├── data/                     # Generated training data
+│   ├── train.csv
+│   ├── test.csv
+│   ├── train.json
+│   ├── test.json
+│   └── label_mapping.json
 ├── models/
 │   ├── __init__.py
 │   └── roberta_classifier.py # Chinese RoBERTa model implementation
@@ -109,6 +117,53 @@ texts = [
 results = clf.predict_batch(texts)
 for result in results:
     print(f"{result['text']} -> {result['intent']}")
+```
+
+### FastAPI Web Service (FastAPI网络服务)
+
+#### Starting the Service (启动服务)
+```bash
+# 启动FastAPI服务
+python intent_api.py --host 0.0.0.0 --port 8000
+
+# 或使用uvicorn直接启动
+uvicorn intent_api:app --host 0.0.0.0 --port 8000
+```
+
+#### API Endpoints (API端点)
+
+1. **Health Check (健康检查)**
+   ```bash
+   curl -X GET "http://localhost:8000/health"
+   ```
+
+2. **Single Prediction (单个预测)**
+   ```bash
+   curl -X POST "http://localhost:8000/predict" \
+     -H "Content-Type: application/json" \
+     -d '{"text": "想订明天两点的会议室，10个人"}'
+   ```
+
+3. **Batch Prediction (批量预测)**
+   ```bash
+   curl -X POST "http://localhost:8000/predict/batch" \
+     -H "Content-Type: application/json" \
+     -d '{"texts": ["想订明天两点的会议室，10个人", "我想查看这个月的工资单"]}'
+   ```
+
+4. **Model Information (模型信息)**
+   ```bash
+   curl -X GET "http://localhost:8000/model/info"
+   ```
+
+#### API Documentation (API文档)
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
+
+#### Test Cases (测试用例)
+Run the comprehensive test suite:
+```bash
+./test_api.sh
 ```
 
 ## Implementation Details
