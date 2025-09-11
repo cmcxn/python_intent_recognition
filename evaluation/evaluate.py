@@ -91,9 +91,15 @@ class IntentEvaluator:
         f1 = f1_score(true_labels, all_predictions, average='weighted', zero_division=0)
         
         # Get detailed classification report
+        all_labels = list(self.classifier.label_to_id.keys())
+        
+        # Get labels present in the data
+        labels_in_data = list(set(true_labels + all_predictions))
+        
         class_report = classification_report(
             true_labels, all_predictions, 
-            target_names=self.classifier.label_to_id.keys(),
+            labels=labels_in_data,
+            target_names=labels_in_data,
             output_dict=True,
             zero_division=0
         )
@@ -101,7 +107,7 @@ class IntentEvaluator:
         # Calculate confusion matrix
         conf_matrix = confusion_matrix(
             true_labels, all_predictions,
-            labels=list(self.classifier.label_to_id.keys())
+            labels=labels_in_data
         )
         
         # Store results
