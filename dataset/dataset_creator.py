@@ -1,17 +1,16 @@
 """
-Dataset Creator for Office Domain Intent Recognition
+Dataset Creator for Chinese Office Domain Intent Recognition
 
-This module generates synthetic training data for office domain intent classification.
-It creates diverse sample queries for each intent to train the RoBERTa model effectively.
+This module generates synthetic training data for Chinese office domain intent classification.
+It creates diverse sample queries for each intent to train the Chinese RoBERTa model effectively.
 
-The dataset includes 7 intent categories:
-1. salary_inquiry - Questions about salary, pay, compensation
-2. meeting_room_booking - Requests to book meeting rooms or conference facilities
-3. leave_request - Requests for time off, vacation, sick leave
-4. directory_search - Searching for employee contact information
-5. company_info - General company information queries
-6. employee_info - Specific employee information requests
-7. employee_search - Finding employees by company abbreviation and name
+The dataset includes 6 intent categories (aligned with reference implementation):
+1. CHECK_PAYSLIP - 查询工资单相关问题
+2. BOOK_MEETING_ROOM - 会议室预订请求
+3. REQUEST_LEAVE - 请假申请
+4. CHECK_BENEFITS - 福利查询
+5. IT_TICKET - IT支持工单
+6. EXPENSE_REIMBURSE - 费用报销
 """
 
 import json
@@ -21,13 +20,13 @@ from typing import List, Dict, Tuple
 from pathlib import Path
 
 
-class OfficeIntentDatasetCreator:
+class ChineseOfficeIntentDatasetCreator:
     """
-    Creates a synthetic dataset for office domain intent recognition.
+    Creates a synthetic dataset for Chinese office domain intent recognition.
     
     This class generates diverse training examples for each intent category,
     ensuring the model can learn to recognize various ways users might express
-    their intentions in an office environment.
+    their intentions in a Chinese office environment.
     """
     
     def __init__(self, samples_per_intent: int = 100):
@@ -38,14 +37,14 @@ class OfficeIntentDatasetCreator:
             samples_per_intent: Number of training samples to generate per intent
         """
         self.samples_per_intent = samples_per_intent
+        # Updated to match reference implementation with Chinese labels
         self.intent_labels = [
-            "salary_inquiry",
-            "meeting_room_booking", 
-            "leave_request",
-            "directory_search",
-            "company_info",
-            "employee_info",
-            "employee_search"
+            "CHECK_PAYSLIP",
+            "BOOK_MEETING_ROOM", 
+            "REQUEST_LEAVE",
+            "CHECK_BENEFITS",
+            "IT_TICKET",
+            "EXPENSE_REIMBURSE"
         ]
         
         # Define templates and vocabulary for each intent
@@ -53,143 +52,122 @@ class OfficeIntentDatasetCreator:
     
     def _define_intent_templates(self):
         """
-        Define template patterns and vocabulary for generating diverse queries.
+        Define template patterns and vocabulary for generating diverse Chinese queries.
         
         Each intent has multiple templates with different phrasings and structures
-        to create realistic variations of how users might express their needs.
+        to create realistic variations of how users might express their needs in Chinese.
         """
         
-        # Salary inquiry templates and vocabulary
-        self.salary_templates = [
-            "What is my {period} salary?",
-            "Can you show me my {type} information?",
-            "I need to check my {period} {type}",
-            "How much do I earn {period}?",
-            "What's my current {type}?",
-            "Can I see my {type} details?",
-            "I want to know my {period} compensation",
-            "Please show my {type} breakdown",
-            "What am I being paid {period}?",
-            "I need my {type} statement"
+        # CHECK_PAYSLIP templates and vocabulary (查询工资单)
+        self.payslip_templates = [
+            "我想查看{period}的工资单",
+            "帮我查询{period}{type}",
+            "我需要看一下{period}的{type}",
+            "{period}的工资是多少？",
+            "查看我的{period}{type}",
+            "能帮我查询{period}的{type}吗？",
+            "我要看{period}的薪资明细",
+            "请显示我的{period}{type}",
+            "{period}发了多少工资？",
+            "我需要{period}的{type}信息"
         ]
         
-        self.salary_vocab = {
-            "period": ["monthly", "annual", "yearly", "current", "this month", "this year"],
-            "type": ["salary", "pay", "compensation", "wage", "earnings", "paycheck", "income"]
+        self.payslip_vocab = {
+            "period": ["这个月", "上个月", "本月", "上月", "当月", "这月", "月底", "本年度", "今年", "去年"],
+            "type": ["工资单", "薪资", "工资", "薪水", "收入", "薪酬", "工资条", "薪资单", "收入明细"]
         }
         
-        # Meeting room booking templates
+        # BOOK_MEETING_ROOM templates (会议室预订)
         self.meeting_templates = [
-            "I need to book a {room_type} for {time}",
-            "Can I reserve {room_type} {time}?",
-            "Book me a {room_type} for {time}",
-            "I want to schedule a {room_type} {time}",
-            "Is {room_type} available {time}?",
-            "Reserve a {room_type} for {time}",
-            "I need a {room_type} {time}",
-            "Can you book {room_type} {time}?",
-            "Schedule me a {room_type} for {time}",
-            "I'd like to reserve a {room_type} {time}"
+            "我想预订{time}的{room_type}",
+            "能帮我订一个{room_type}{time}用吗？",
+            "我需要预约{time}的{room_type}",
+            "{time}有{room_type}可以预订吗？",
+            "想订{time}的{room_type}",
+            "请帮我安排{time}的{room_type}",
+            "我要预定{room_type}，{time}",
+            "能预约{time}的{room_type}吗？",
+            "帮忙订个{room_type}，{time}用",
+            "{time}我需要用{room_type}"
         ]
         
         self.meeting_vocab = {
-            "room_type": ["meeting room", "conference room", "boardroom", "room", "conference hall", "meeting space"],
-            "time": ["tomorrow", "next week", "today", "this afternoon", "Monday", "Tuesday", "Friday", "next month", "at 2pm", "for 3 hours"]
+            "room_type": ["会议室", "大会议室", "小会议室", "培训室", "讨论室", "视频会议室", "多媒体室"],
+            "time": ["明天上午", "下午两点", "明天下午", "后天", "周一", "周五下午", "明天十点", "下周", "今天下午"]
         }
         
-        # Leave request templates
+        # REQUEST_LEAVE templates (请假申请)
         self.leave_templates = [
-            "I want to take {leave_type} {time}",
-            "Can I request {leave_type} for {time}?",
-            "I need {leave_type} {time}",
-            "I'd like to apply for {leave_type} {time}",
-            "Request {leave_type} for {time}",
-            "I want to book {leave_type} {time}",
-            "Can I have {leave_type} {time}?",
-            "I need to take {leave_type} {time}",
-            "Apply for {leave_type} {time}",
-            "I'm requesting {leave_type} for {time}"
+            "我想请{leave_type}{time}",
+            "我需要{time}请{leave_type}",
+            "能帮我申请{time}的{leave_type}吗？",
+            "我要{time}请{leave_type}",
+            "{time}我想请{leave_type}",
+            "申请{time}的{leave_type}",
+            "我想{time}休{leave_type}",
+            "需要请{leave_type}，{time}",
+            "{time}我要请假",
+            "帮我申请{leave_type}，{time}"
         ]
         
         self.leave_vocab = {
-            "leave_type": ["vacation", "sick leave", "time off", "personal leave", "annual leave", "PTO", "holiday"],
-            "time": ["next week", "tomorrow", "Monday", "this Friday", "next month", "two days", "a week", "three days"]
+            "leave_type": ["病假", "事假", "年假", "婚假", "产假", "调休", "假", "假期"],
+            "time": ["明天", "下周", "这周五", "下个月", "这个月底", "后天", "周一到周三", "两天", "一周"]
         }
         
-        # Directory search templates
-        self.directory_templates = [
-            "Find {person} in the {directory}",
-            "Look up {person} in {directory}",
-            "Search for {person} contact",
-            "I need {person}'s {contact_type}",
-            "What's {person}'s {contact_type}?",
-            "Can you find {person}'s details?",
-            "Search {directory} for {person}",
-            "I'm looking for {person}",
-            "Find {person}'s {contact_type}",
-            "Look up {person}'s information"
+        # CHECK_BENEFITS templates (福利查询)
+        self.benefits_templates = [
+            "我想了解{benefit_type}",
+            "能告诉我{benefit_type}的详情吗？",
+            "查询{benefit_type}信息",
+            "我的{benefit_type}有哪些？",
+            "请介绍一下{benefit_type}",
+            "{benefit_type}怎么申请？",
+            "我想知道{benefit_type}政策",
+            "查看{benefit_type}说明",
+            "{benefit_type}的标准是什么？",
+            "公司的{benefit_type}如何？"
         ]
         
-        self.directory_vocab = {
-            "person": ["John Smith", "Sarah Johnson", "Mike Brown", "Lisa Davis", "Tom Wilson", "employee", "person", "staff member"],
-            "directory": ["company directory", "employee directory", "staff directory", "phonebook", "contact list"],
-            "contact_type": ["phone number", "email", "extension", "contact info", "details", "information"]
+        self.benefits_vocab = {
+            "benefit_type": ["社保", "公积金", "保险", "福利待遇", "医疗保险", "年终奖", "餐补", "交通补贴", "住房补贴", "培训福利"]
         }
         
-        # Company info templates
-        self.company_templates = [
-            "What is the company {info_type}?",
-            "Tell me about our {info_type}",
-            "I need {info_type} information",
-            "Can you provide {info_type} details?",
-            "What's our company {info_type}?",
-            "I want to know about {info_type}",
-            "Show me {info_type} information",
-            "What is our {info_type}?",
-            "I need to know the {info_type}",
-            "Can I get {info_type} details?"
+        # IT_TICKET templates (IT支持工单)
+        self.it_templates = [
+            "我的{device}有{problem}",
+            "{device}{problem}了，需要帮助",
+            "IT支持：{device}{problem}",
+            "电脑问题：{problem}",
+            "我需要IT帮助，{device}{problem}",
+            "{device}出现{problem}，怎么办？",
+            "技术支持：{problem}",
+            "帮忙解决{device}的{problem}",
+            "{device}有故障：{problem}",
+            "IT工单：{device}{problem}"
         ]
         
-        self.company_vocab = {
-            "info_type": ["policy", "mission", "values", "history", "address", "phone number", "website", "headquarters", "locations", "departments"]
+        self.it_vocab = {
+            "device": ["电脑", "笔记本", "打印机", "网络", "邮箱", "系统", "软件", "设备"],
+            "problem": ["无法开机", "网络连接不上", "运行很慢", "死机", "无法打印", "登录不了", "崩溃", "出错"]
         }
         
-        # Employee info templates
-        self.employee_templates = [
-            "What is {employee}'s {info_type}?",
-            "Tell me about {employee}",
-            "I need {employee}'s {info_type}",
-            "Can you show {employee}'s details?",
-            "What's {employee}'s {info_type}?",
-            "I want {employee}'s information",
-            "Show me {employee}'s {info_type}",
-            "Get {employee}'s {info_type}",
-            "I need to know {employee}'s {info_type}",
-            "Find {employee}'s {info_type}"
+        # EXPENSE_REIMBURSE templates (费用报销)
+        self.expense_templates = [
+            "我需要报销{expense_type}",
+            "申请{expense_type}报销",
+            "我想报销{expense_type}费用",
+            "{expense_type}怎么报销？",
+            "报销申请：{expense_type}",
+            "我要提交{expense_type}的报销单",
+            "能帮我报销{expense_type}吗？",
+            "{expense_type}报销流程是什么？",
+            "我有{expense_type}需要报销",
+            "请帮我处理{expense_type}报销"
         ]
         
-        self.employee_vocab = {
-            "employee": ["John's", "Sarah's", "my manager's", "the HR director's", "my colleague's", "the CEO's"],
-            "info_type": ["department", "position", "title", "role", "email", "phone", "office location", "reports"]
-        }
-        
-        # Employee search templates
-        self.search_templates = [
-            "Find employees at {company} named {name}",
-            "Search for {name} at {company}",
-            "Look up {name} from {company}",
-            "Who is {name} at {company}?",
-            "Find {name} working at {company}",
-            "Search {company} for {name}",
-            "I'm looking for {name} at {company}",
-            "Find staff named {name} at {company}",
-            "Look for {name} in {company}",
-            "Search for employees named {name} at {company}"
-        ]
-        
-        self.search_vocab = {
-            "company": ["ABC Corp", "XYZ Inc", "TechCorp", "GlobalTech", "InnovateCo", "the company", "our organization"],
-            "name": ["Smith", "Johnson", "Brown", "Davis", "Wilson", "Taylor", "Anderson", "Thomas"]
+        self.expense_vocab = {
+            "expense_type": ["差旅费", "交通费", "餐费", "住宿费", "培训费", "办公用品", "通讯费", "会议费", "招待费", "加班餐费"]
         }
     
     def _generate_samples_for_intent(self, intent: str, templates: List[str], vocab: Dict[str, List[str]]) -> List[str]:
@@ -233,20 +211,18 @@ class OfficeIntentDatasetCreator:
         
         # Generate samples for each intent
         for intent in self.intent_labels:
-            if intent == "salary_inquiry":
-                samples = self._generate_samples_for_intent(intent, self.salary_templates, self.salary_vocab)
-            elif intent == "meeting_room_booking":
+            if intent == "CHECK_PAYSLIP":
+                samples = self._generate_samples_for_intent(intent, self.payslip_templates, self.payslip_vocab)
+            elif intent == "BOOK_MEETING_ROOM":
                 samples = self._generate_samples_for_intent(intent, self.meeting_templates, self.meeting_vocab)
-            elif intent == "leave_request":
+            elif intent == "REQUEST_LEAVE":
                 samples = self._generate_samples_for_intent(intent, self.leave_templates, self.leave_vocab)
-            elif intent == "directory_search":
-                samples = self._generate_samples_for_intent(intent, self.directory_templates, self.directory_vocab)
-            elif intent == "company_info":
-                samples = self._generate_samples_for_intent(intent, self.company_templates, self.company_vocab)
-            elif intent == "employee_info":
-                samples = self._generate_samples_for_intent(intent, self.employee_templates, self.employee_vocab)
-            elif intent == "employee_search":
-                samples = self._generate_samples_for_intent(intent, self.search_templates, self.search_vocab)
+            elif intent == "CHECK_BENEFITS":
+                samples = self._generate_samples_for_intent(intent, self.benefits_templates, self.benefits_vocab)
+            elif intent == "IT_TICKET":
+                samples = self._generate_samples_for_intent(intent, self.it_templates, self.it_vocab)
+            elif intent == "EXPENSE_REIMBURSE":
+                samples = self._generate_samples_for_intent(intent, self.expense_templates, self.expense_vocab)
             
             # Add samples and labels
             texts.extend(samples)
@@ -345,17 +321,18 @@ class OfficeIntentDatasetCreator:
 
 
 def main():
-    """Main function to create and save the dataset."""
-    print("Creating Office Domain Intent Recognition Dataset...")
+    """Main function to create and save the Chinese dataset."""
+    print("Creating Chinese Office Domain Intent Recognition Dataset...")
+    print("创建中文办公领域意图识别数据集...")
     
-    # Create dataset with 100 samples per intent (700 total samples)
-    creator = OfficeIntentDatasetCreator(samples_per_intent=100)
+    # Create dataset with 100 samples per intent (600 total samples)
+    creator = ChineseOfficeIntentDatasetCreator(samples_per_intent=100)
     
     # Save dataset to data directory
     creator.save_dataset("data")
     
-    print("\nDataset creation completed!")
-    print("Files created:")
+    print("\n数据集创建完成！Dataset creation completed!")
+    print("创建的文件 Files created:")
     print("- data/train.csv")
     print("- data/test.csv") 
     print("- data/train.json")

@@ -1,0 +1,240 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Chinese Intent Recognition Training Script (train_intent.py)
+
+This script implements the Chinese RoBERTa-based intent classification training
+pipeline as specified in the requirements. It uses the hfl/chinese-roberta-wwm-ext
+model and supports GPU acceleration when available.
+
+Features:
+- Chinese RoBERTa (hfl/chinese-roberta-wwm-ext) model
+- GPU detection and prioritized usage
+- Training with validation and metrics
+- Model saving for inference
+"""
+
+import os
+from dataclasses import dataclass
+from typing import Dict, List
+import pandas as pd
+from datasets import Dataset
+from transformers import (
+    AutoTokenizer, AutoModelForSequenceClassification,
+    TrainingArguments, Trainer
+)
+import numpy as np
+from sklearn.metrics import precision_recall_fscore_support, accuracy_score
+import torch
+
+# Chinese RoBERTa model configuration
+MODEL_NAME = "hfl/chinese-roberta-wwm-ext"  # 中文RoBERTa-WWM-Ext
+
+# Intent labels matching the reference implementation
+LABEL_LIST = ["CHECK_PAYSLIP","BOOK_MEETING_ROOM","REQUEST_LEAVE",
+              "CHECK_BENEFITS","IT_TICKET","EXPENSE_REIMBURSE"]
+LABEL2ID = {l:i for i,l in enumerate(LABEL_LIST)}
+ID2LABEL = {i:l for l,i in LABEL2ID.items()}
+
+def load_csv(path: str) -> Dataset:
+    """
+    Load dataset from CSV file.
+    
+    Args:
+        path: Path to CSV file
+        
+    Returns:
+        Hugging Face Dataset object
+    """
+    df = pd.read_csv(path)
+    df = df.dropna()
+    df["label_id"] = df["label"].map(LABEL2ID)
+    return Dataset.from_pandas(df[["text","label_id"]])
+
+def compute_metrics(eval_pred):
+    """
+    Compute evaluation metrics.
+    
+    Args:
+        eval_pred: Tuple of (predictions, labels)
+        
+    Returns:
+        Dictionary of computed metrics
+    """
+    logits, labels = eval_pred
+    preds = np.argmax(logits, axis=-1)
+    acc = accuracy_score(labels, preds)
+    p, r, f1, _ = precision_recall_fscore_support(labels, preds, average="macro", zero_division=0)
+    return {"accuracy": acc, "precision": p, "recall": r, "f1": f1}
+
+@dataclass
+class DataCollator:
+    """
+    Data collator for Chinese text tokenization.
+    """
+    tokenizer: AutoTokenizer
+    max_len: int = 64
+    
+    def __call__(self, features: List[Dict]):
+        """
+        Collate a batch of features.
+        
+        Args:
+            features: List of feature dictionaries
+            
+        Returns:
+            Tokenized batch ready for model input
+        """
+        texts = [f["text"] for f in features]
+        labels = [f["label_id"] for f in features]
+        enc = self.tokenizer(texts, truncation=True, padding=True, 
+                           max_length=self.max_len, return_tensors="pt")
+        enc["labels"] = enc["input_ids"].new_tensor(labels)
+        return enc
+
+def detect_device():
+    """
+    Detect and configure the best available device (GPU preferred).
+    
+    Returns:
+        Device information and configuration
+    """
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        gpu_name = torch.cuda.get_device_name(0)
+        print(f"✓ GPU detected: {gpu_name}")
+        print(f"✓ CUDA version: {torch.version.cuda}")
+        print(f"✓ GPU memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
+        use_fp16 = True
+    else:
+        device = torch.device("cpu")
+        print("! No GPU available, using CPU")
+        use_fp16 = False
+    
+    return device, use_fp16
+
+def main():
+    """Main training function."""
+    print("🚀 Chinese Intent Recognition Training")
+    print("=" * 50)
+    print(f"Model: {MODEL_NAME}")
+    print(f"Intent Categories: {len(LABEL_LIST)}")
+    print(f"Labels: {LABEL_LIST}")
+    print()
+    
+    # Device detection
+    device, use_fp16 = detect_device()
+    
+    # Check if data files exist
+    train_path = "data/intent_train.csv"
+    dev_path = "data/intent_dev.csv"
+    
+    # If the exact files don't exist, try to use the generated ones
+    if not os.path.exists(train_path):
+        train_path = "data/train.csv"
+        print(f"Using {train_path} instead of intent_train.csv")
+    
+    if not os.path.exists(dev_path):
+        dev_path = "data/test.csv"
+        print(f"Using {dev_path} instead of intent_dev.csv")
+    
+    if not os.path.exists(train_path) or not os.path.exists(dev_path):
+        print("❌ Training data not found!")
+        print("Please run the dataset creator first:")
+        print("python -m dataset.dataset_creator")
+        return
+    
+    try:
+        # Load tokenizer
+        print("📝 Loading tokenizer...")
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+        print("✓ Tokenizer loaded successfully")
+        
+        # Load datasets
+        print("📊 Loading datasets...")
+        train_ds = load_csv(train_path)
+        dev_ds = load_csv(dev_path)
+        print(f"✓ Training samples: {len(train_ds)}")
+        print(f"✓ Validation samples: {len(dev_ds)}")
+        
+        # Load model
+        print("🤖 Loading model...")
+        model = AutoModelForSequenceClassification.from_pretrained(
+            MODEL_NAME,
+            num_labels=len(LABEL_LIST),
+            id2label=ID2LABEL, 
+            label2id=LABEL2ID
+        )
+        print("✓ Model loaded successfully")
+        
+        # Training arguments
+        args = TrainingArguments(
+            output_dir="ckpt/intent",
+            per_device_train_batch_size=16,
+            per_device_eval_batch_size=32,
+            learning_rate=2e-5,
+            num_train_epochs=3,
+            evaluation_strategy="epoch",
+            save_strategy="epoch",
+            load_best_model_at_end=True,
+            metric_for_best_model="f1",
+            fp16=use_fp16,  # Use FP16 if GPU is available
+            dataloader_pin_memory=torch.cuda.is_available(),
+            logging_steps=10,
+            logging_dir="logs/intent"
+        )
+        
+        # Data collator
+        collator = DataCollator(tokenizer)
+        
+        # Initialize trainer
+        print("🏋️ Initializing trainer...")
+        trainer = Trainer(
+            model=model,
+            args=args,
+            train_dataset=train_ds,
+            eval_dataset=dev_ds,
+            data_collator=collator,
+            tokenizer=tokenizer,
+            compute_metrics=compute_metrics
+        )
+        
+        # Start training
+        print("🚀 Starting training...")
+        print("=" * 30)
+        trainer.train()
+        
+        # Save model
+        print("💾 Saving model...")
+        os.makedirs("models/intent_roberta", exist_ok=True)
+        trainer.save_model("models/intent_roberta")
+        tokenizer.save_pretrained("models/intent_roberta")
+        
+        # Save label mapping
+        import json
+        label_mapping = {
+            "LABEL_LIST": LABEL_LIST,
+            "LABEL2ID": LABEL2ID,
+            "ID2LABEL": ID2LABEL
+        }
+        with open("models/intent_roberta/label_mapping.json", "w", encoding="utf-8") as f:
+            json.dump(label_mapping, f, ensure_ascii=False, indent=2)
+        
+        print("✅ 训练完成，模型保存在 models/intent_roberta")
+        print("✅ Training completed, model saved to models/intent_roberta")
+        
+        # Final evaluation
+        print("\n📊 Final Evaluation:")
+        results = trainer.evaluate()
+        print(f"Accuracy: {results['eval_accuracy']:.4f}")
+        print(f"F1 Score: {results['eval_f1']:.4f}")
+        print(f"Precision: {results['eval_precision']:.4f}")
+        print(f"Recall: {results['eval_recall']:.4f}")
+        
+    except Exception as e:
+        print(f"❌ Training failed: {e}")
+        import traceback
+        traceback.print_exc()
+
+if __name__ == "__main__":
+    main()

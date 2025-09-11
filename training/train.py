@@ -429,9 +429,9 @@ def main():
     # Configuration
     config = {
         'data_dir': 'data',
-        'model_name': 'roberta-base',
-        'num_labels': 7,
-        'max_length': 128,
+        'model_name': 'hfl/chinese-roberta-wwm-ext',  # Chinese RoBERTa
+        'num_labels': 6,  # Updated for Chinese implementation
+        'max_length': 64,  # Reduced max length as per reference
         'batch_size': 16,
         'learning_rate': 2e-5,
         'num_epochs': 3,
