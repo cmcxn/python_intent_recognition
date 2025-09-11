@@ -22,3 +22,4 @@ tqdm>=4.65.0
 
 # Development and testing
 pytest>=7.0.0
+accelerate>=0.26.0

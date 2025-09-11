@@ -174,14 +174,21 @@ def main():
             per_device_eval_batch_size=32,
             learning_rate=2e-5,
             num_train_epochs=3,
-            evaluation_strategy="epoch",
+
+            eval_strategy="epoch",
             save_strategy="epoch",
             load_best_model_at_end=True,
             metric_for_best_model="f1",
-            fp16=use_fp16,  # Use FP16 if GPU is available
+            save_total_limit=2,
+
+            fp16=use_fp16,
             dataloader_pin_memory=torch.cuda.is_available(),
             logging_steps=10,
-            logging_dir="logs/intent"
+            logging_dir="logs/intent",
+            seed=42,
+
+            # 👇 关键一行：不要在进入 collator 前移除 text/label_id
+            remove_unused_columns=False,
         )
         
         # Data collator
