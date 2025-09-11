@@ -1,40 +1,49 @@
-# RoBERTa Intent Recognition for Office Domain
+# Chinese RoBERTa Intent Recognition for Office Domain
 
-This module provides a complete implementation of intent recognition for office domain tasks using RoBERTa (Robustly Optimized BERT Pretraining Approach).
+This module provides a complete implementation of Chinese intent recognition for office domain tasks using Chinese RoBERTa (hfl/chinese-roberta-wwm-ext).
 
-## Supported Intents
+## Supported Intents (支持的意图)
 
-The model can identify the following office domain intents:
+The model can identify the following Chinese office domain intents:
 
-1. **salary_inquiry** - Checking salary information
-2. **meeting_room_booking** - Booking meeting rooms
-3. **leave_request** - Requesting leave/time off
-4. **directory_search** - Searching company directory
-5. **company_info** - Querying company information
-6. **employee_info** - Querying employee information
-7. **employee_search** - Finding employees by company abbreviation and name
+1. **CHECK_PAYSLIP** - 查询工资单相关问题
+2. **BOOK_MEETING_ROOM** - 会议室预订请求
+3. **REQUEST_LEAVE** - 请假申请
+4. **CHECK_BENEFITS** - 福利查询
+5. **IT_TICKET** - IT支持工单
+6. **EXPENSE_REIMBURSE** - 费用报销
+
+## Model Features
+
+- **Chinese RoBERTa**: Uses `hfl/chinese-roberta-wwm-ext` for optimal Chinese text processing
+- **GPU Acceleration**: Automatically detects and uses GPU when available
+- **Optimized for Chinese**: Designed specifically for Chinese office domain conversations
+- **High Performance**: Fast inference with confidence scores
 
 ## Project Structure
 
 ```
-python_intent_recognition/
+chinese_intent_recognition/
 ├── README.md                 # This file
-├── requirements.txt          # Python dependencies
+├── requirements.txt          # Python dependencies  
+├── train_intent.py          # Chinese RoBERTa training script
+├── intent_infer.py          # Chinese inference script
+├── test_chinese_system.py   # Comprehensive system test
 ├── dataset/
 │   ├── __init__.py
-│   └── dataset_creator.py    # Sample dataset generation
+│   └── dataset_creator.py    # Chinese dataset generation
 ├── models/
 │   ├── __init__.py
-│   └── roberta_classifier.py # RoBERTa model implementation
+│   └── roberta_classifier.py # Chinese RoBERTa model implementation
 ├── training/
 │   ├── __init__.py
-│   └── train.py             # Training script
+│   └── train.py             # Alternative training script
 ├── evaluation/
 │   ├── __init__.py
 │   └── evaluate.py          # Evaluation module
 ├── inference/
 │   ├── __init__.py
-│   └── predict.py           # Inference script
+│   └── predict.py           # Alternative inference script
 └── examples/
     ├── __init__.py
     └── demo.py              # Complete pipeline demonstration
@@ -47,62 +56,104 @@ python_intent_recognition/
    pip install -r requirements.txt
    ```
 
-2. Generate sample dataset:
+2. Generate Chinese dataset:
    ```bash
    python -m dataset.dataset_creator
    ```
 
-3. Train the model:
+3. Train the Chinese RoBERTa model:
    ```bash
-   python -m training.train
+   python train_intent.py
    ```
 
-4. Evaluate the model:
+4. Test inference with Chinese text:
    ```bash
-   python -m evaluation.evaluate
+   python intent_infer.py "想订明天两点的会议室，10个人"
    ```
 
-5. Run inference:
+5. Run comprehensive system test:
    ```bash
-   python -m inference.predict "I want to book a meeting room for tomorrow"
+   python test_chinese_system.py
    ```
 
-6. Run complete demo:
-   ```bash
-   python -m examples.demo
-   ```
+## Usage Examples
+
+### Training (训练)
+```python
+# 训练中文意图识别模型
+python train_intent.py
+```
+
+### Inference (推理)
+```python
+from intent_infer import IntentClassifier
+
+# 初始化分类器
+clf = IntentClassifier()
+
+# 预测意图
+result = clf.predict("想订明天两点的会议室，10个人")
+print(f"Intent: {result['intent']}")
+print(f"Confidence: {result['confidence']:.3f}")
+print(f"All probabilities: {result['probs']}")
+```
+
+### Batch Processing (批量处理)
+```python
+texts = [
+    "我想查看这个月的工资单",
+    "需要请假三天",
+    "电脑开不了机，需要IT支持"
+]
+
+results = clf.predict_batch(texts)
+for result in results:
+    print(f"{result['text']} -> {result['intent']}")
+```
 
 ## Implementation Details
 
-### Dataset Creation
-- Generates synthetic training data for each intent class
-- Includes diverse phrasings and vocabulary for robust training
+### Chinese Dataset Creation
+- Generates synthetic Chinese training data for each intent class
+- Includes diverse Chinese phrasings and vocabulary for robust training
 - Creates balanced dataset with equal samples per intent
+- Supports office domain scenarios in Chinese context
 
-### Model Architecture
-- Uses pre-trained RoBERTa-base as the foundation
+### Chinese RoBERTa Model Architecture
+- Uses pre-trained `hfl/chinese-roberta-wwm-ext` as the foundation
+- Optimized for Chinese text processing and understanding
 - Adds a classification head for intent prediction
-- Implements proper tokenization and preprocessing
+- Implements proper Chinese tokenization and preprocessing
 
 ### Training Process
-- Fine-tunes RoBERTa on the intent classification task
-- Uses appropriate learning rate and training strategies
+- Fine-tunes Chinese RoBERTa on the intent classification task
+- GPU detection and automatic utilization when available
+- Uses appropriate learning rate and training strategies for Chinese models
 - Includes validation and early stopping
+
+### GPU Acceleration
+- Automatically detects CUDA availability
+- Prioritizes GPU usage for training and inference
+- Falls back to CPU if GPU is not available
+- Optimized memory usage with FP16 training when possible
 
 ### Evaluation Metrics
 - Accuracy, Precision, Recall, F1-score
 - Confusion matrix for detailed analysis
-- Per-class performance metrics
+- Per-class performance metrics for each Chinese intent
 
 ### Inference
-- Simple API for predicting intents from text
+- Simple API for predicting intents from Chinese text
 - Confidence scores for predictions
 - Batch processing capability
+- Support for both single and multiple text inputs
 
 ## Educational Value
 
 This implementation includes extensive comments and documentation to help understand:
-- How to fine-tune pre-trained language models
-- Intent classification system design
-- PyTorch/Transformers best practices
-- Model evaluation and validation techniques
+- How to fine-tune pre-trained Chinese language models
+- Chinese intent classification system design
+- PyTorch/Transformers best practices for Chinese NLP
+- Model evaluation and validation techniques for Chinese text
+- GPU acceleration and optimization strategies
+- Chinese text processing and tokenization methods

@@ -38,31 +38,30 @@ from typing import Dict, List, Optional, Union, Tuple
 import warnings
 warnings.filterwarnings('ignore')
 
-# Use Chinese RoBERTa model as suggested
-MODEL_NAME = "hfl/chinese-roberta-wwm-ext"  # 中文RoBERTa
+# Use Chinese RoBERTa model as specified in requirements
+MODEL_NAME = "hfl/chinese-roberta-wwm-ext"  # 中文RoBERTa-WWM-Ext
 
 
 class RoBERTaIntentClassifier:
     """
-    RoBERTa-based intent classifier for office domain tasks.
+    RoBERTa-based intent classifier for Chinese office domain tasks.
     
-    This classifier fine-tunes a pre-trained RoBERTa model for intent
+    This classifier fine-tunes a pre-trained Chinese RoBERTa model for intent
     classification, providing high-accuracy predictions with confidence scores.
     
-    Supported Intents:
-    - salary_inquiry: Checking salary information
-    - meeting_room_booking: Booking meeting rooms  
-    - leave_request: Requesting leave/time off
-    - directory_search: Searching company directory
-    - company_info: Querying company information
-    - employee_info: Querying employee information
-    - employee_search: Finding employees by criteria
+    Supported Intents (支持的意图):
+    - CHECK_PAYSLIP: 查询工资单相关问题
+    - BOOK_MEETING_ROOM: 会议室预订请求 
+    - REQUEST_LEAVE: 请假申请
+    - CHECK_BENEFITS: 福利查询
+    - IT_TICKET: IT支持工单
+    - EXPENSE_REIMBURSE: 费用报销
     """
     
     def __init__(self, 
                  model_name: str = MODEL_NAME,
-                 num_labels: int = 7,
-                 max_length: int = 128,
+                 num_labels: int = 6,  # Updated to 6 labels for Chinese implementation
+                 max_length: int = 64,  # Reduced max length for Chinese (similar to reference)
                  device: Optional[str] = None,
                  offline_mode: bool = False):
         """
@@ -80,9 +79,14 @@ class RoBERTaIntentClassifier:
         self.max_length = max_length
         self.offline_mode = offline_mode
         
-        # Auto-detect device if not specified
+        # Auto-detect device if not specified (prioritize GPU)
         if device is None:
-            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            if torch.cuda.is_available():
+                self.device = torch.device('cuda')
+                print(f"✓ GPU detected: {torch.cuda.get_device_name()}")
+            else:
+                self.device = torch.device('cpu')
+                print("! No GPU available, using CPU")
         else:
             self.device = torch.device(device)
         
@@ -106,15 +110,14 @@ class RoBERTaIntentClassifier:
         print("✓ RoBERTa classifier initialized successfully")
     
     def _initialize_default_labels(self):
-        """Initialize default office domain intent labels."""
+        """Initialize default Chinese office domain intent labels."""
         default_labels = [
-            'salary_inquiry',
-            'meeting_room_booking', 
-            'leave_request',
-            'directory_search',
-            'company_info',
-            'employee_info',
-            'employee_search'
+            'CHECK_PAYSLIP',      # 查询工资单
+            'BOOK_MEETING_ROOM',  # 会议室预订
+            'REQUEST_LEAVE',      # 请假申请
+            'CHECK_BENEFITS',     # 福利查询
+            'IT_TICKET',          # IT支持工单
+            'EXPENSE_REIMBURSE'   # 费用报销
         ]
         
         for i, label in enumerate(default_labels):
@@ -588,8 +591,8 @@ class RoBERTaIntentClassifier:
 
 
 # Convenience function for quick model creation
-def create_intent_classifier(num_labels: int = 7, 
-                           max_length: int = 128,
+def create_intent_classifier(num_labels: int = 6, 
+                           max_length: int = 64,
                            device: Optional[str] = None,
                            offline_mode: bool = True) -> RoBERTaIntentClassifier:
     """
@@ -630,9 +633,9 @@ if __name__ == "__main__":
     
     # Example predictions (requires trained model)
     sample_texts = [
-        "What is my monthly salary?",
-        "I need to book a meeting room for tomorrow",
-        "Can I request vacation leave next week?"
+        "我想查看这个月的工资单",
+        "想订明天两点的会议室，10个人",
+        "我需要下周一请假"
     ]
     
     print(f"\nExample predictions:")
