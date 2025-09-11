@@ -13,8 +13,10 @@ Features:
 - Training with validation and metrics
 - Model saving for inference
 """
-
 import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
 from dataclasses import dataclass
 from typing import Dict, List
 import pandas as pd
@@ -27,6 +29,8 @@ import numpy as np
 from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 import torch
 
+print("gpu_count=", torch.cuda.device_count())
+print("gpu0=", torch.cuda.get_device_name(0))
 # Chinese RoBERTa model configuration
 MODEL_NAME = "hfl/chinese-roberta-wwm-ext"  # 中文RoBERTa-WWM-Ext
 
@@ -126,8 +130,8 @@ def main():
     device, use_fp16 = detect_device()
     
     # Check if data files exist
-    train_path = "data/intent_train.csv"
-    dev_path = "data/intent_dev.csv"
+    train_path = "data/train_strat.csv"
+    dev_path = "data/dev_strat.csv"
     
     # If the exact files don't exist, try to use the generated ones
     if not os.path.exists(train_path):
@@ -170,30 +174,29 @@ def main():
         # Training arguments
         args = TrainingArguments(
             output_dir="ckpt/intent",
-            per_device_train_batch_size=16,
-            per_device_eval_batch_size=32,
+            per_device_train_batch_size=32,
+            per_device_eval_batch_size=64,
             learning_rate=2e-5,
-            num_train_epochs=3,
-
+            num_train_epochs=4,  # 3~5 之间都可
             eval_strategy="epoch",
             save_strategy="epoch",
             load_best_model_at_end=True,
             metric_for_best_model="f1",
             save_total_limit=2,
-
             fp16=use_fp16,
             dataloader_pin_memory=torch.cuda.is_available(),
             logging_steps=10,
             logging_dir="logs/intent",
             seed=42,
-
-            # 👇 关键一行：不要在进入 collator 前移除 text/label_id
             remove_unused_columns=False,
+            weight_decay=0.01,  # ★ 新增
+            warmup_ratio=0.1,  # ★ 新增
+            lr_scheduler_type="cosine",  # ★ 可选
         )
-        
+
         # Data collator
-        collator = DataCollator(tokenizer)
-        
+        collator = DataCollator(tokenizer, max_len=128)
+
         # Initialize trainer
         print("🏋️ Initializing trainer...")
         trainer = Trainer(
