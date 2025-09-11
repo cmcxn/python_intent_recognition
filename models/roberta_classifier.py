@@ -493,13 +493,14 @@ class RoBERTaIntentClassifier:
         print(f"✓ Model saved to {save_dir}")
     
     @classmethod
-    def load_model(cls, model_path: str, device: Optional[str] = None) -> 'RoBERTaIntentClassifier':
+    def load_model(cls, model_path: str, device: Optional[str] = None, offline_mode: bool = True) -> 'RoBERTaIntentClassifier':
         """
         Load a trained model from directory.
         
         Args:
             model_path: Path to saved model directory
             device: Device to load model on
+            offline_mode: Use offline mode for loading (default: True)
             
         Returns:
             Loaded RoBERTaIntentClassifier instance
@@ -524,28 +525,33 @@ class RoBERTaIntentClassifier:
             model_name=config.get('model_name', MODEL_NAME),
             num_labels=config.get('num_labels', 7),
             max_length=config.get('max_length', 128),
-            device=device
+            device=device,
+            offline_mode=offline_mode
         )
         
-        # Load saved model weights
-        try:
-            classifier.model = RobertaForSequenceClassification.from_pretrained(model_dir)
-            classifier.model.to(classifier.device)
-            print("✓ Model weights loaded successfully")
-        except Exception as e:
-            print(f"Warning: Could not load model weights: {e}")
-        
-        # Load saved tokenizer
-        try:
-            self.tokenizer = AutoTokenizer.from_pretrained(model_dir)
-            print("✓ Tokenizer loaded successfully")
-        except Exception as e:
-            print(f"Warning: Could not load tokenizer: {e}")
+        # Load saved model weights (only if not in offline mode)
+        if not offline_mode:
+            try:
+                classifier.model = RobertaForSequenceClassification.from_pretrained(model_dir)
+                classifier.model.to(classifier.device)
+                print("✓ Model weights loaded successfully")
+            except Exception as e:
+                print(f"Warning: Could not load model weights: {e}")
+            
+            # Load saved tokenizer
+            try:
+                classifier.tokenizer = AutoTokenizer.from_pretrained(model_dir)
+                print("✓ Tokenizer loaded successfully")
+            except Exception as e:
+                print(f"Warning: Could not load tokenizer: {e}")
+        else:
+            print("✓ Using offline mode - mock model and tokenizer")
         
         # Load label mappings
         if 'label_to_id' in config:
             classifier.label_to_id = config['label_to_id']
-            classifier.id_to_label = config['id_to_label']
+            # Reconstruct id_to_label with integer keys
+            classifier.id_to_label = {v: k for k, v in classifier.label_to_id.items()}
         else:
             # Try to load from separate file
             label_file = model_dir / 'label_mapping.json'

@@ -1,0 +1,43 @@
+text,label
+I need locations information,company_info
+I want to take time off two days,leave_request
+Can I reserve room today?,meeting_room_booking
+Can I get policy details?,company_info
+Please show my pay breakdown,salary_inquiry
+Search for Anderson at TechCorp,employee_search
+Look up Lisa Davis's information,directory_search
+I need website information,company_info
+I need my colleague's's title,employee_info
+Can I reserve meeting room today?,meeting_room_booking
+Can you provide policy details?,company_info
+I need PTO two days,leave_request
+I'm requesting time off for a week,leave_request
+Can you book conference hall for 3 hours?,meeting_room_booking
+Can I have annual leave two days?,leave_request
+Show me my manager's's position,employee_info
+I'd like to apply for vacation tomorrow,leave_request
+I'm looking for Wilson at ABC Corp,employee_search
+Can you show the HR director's's details?,employee_info
+I need my pay statement,salary_inquiry
+What is the company policy?,company_info
+How much do I earn this year?,salary_inquiry
+Can you book meeting space next week?,meeting_room_booking
+Find Davis working at InnovateCo,employee_search
+Please show my compensation breakdown,salary_inquiry
+Tell me about John's,employee_info
+Search phonebook for person,directory_search
+Can I see my compensation details?,salary_inquiry
+Get my colleague's's phone,employee_info
+Find employees at InnovateCo named Johnson,employee_search
+Can I see my paycheck details?,salary_inquiry
+Search ABC Corp for Wilson,employee_search
+I need John Smith's email,directory_search
+I need to know Sarah's's position,employee_info
+Can you book room Tuesday?,meeting_room_booking
+Search staff directory for staff member,directory_search
+What's Mike Brown's email?,directory_search
+Look up Lisa Davis in phonebook,directory_search
+Is conference hall available next month?,meeting_room_booking
+Can I request holiday for Monday?,leave_request
+Tell me about our policy,company_info
+Search for Smith at InnovateCo,employee_search

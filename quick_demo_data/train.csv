@@ -1,0 +1,169 @@
+text,label
+I need Sarah's's phone,employee_info
+I'd like to reserve a meeting room today,meeting_room_booking
+Can I get headquarters details?,company_info
+Is conference room available tomorrow?,meeting_room_booking
+What's my manager's's reports?,employee_info
+I'm looking for Wilson at the company,employee_search
+Find staff named Johnson at ABC Corp,employee_search
+Apply for vacation two days,leave_request
+What is the company departments?,company_info
+I'm requesting time off for tomorrow,leave_request
+What's my current income?,salary_inquiry
+Search for employees named Brown at XYZ Inc,employee_search
+I need Sarah's's department,employee_info
+Schedule me a room for at 2pm,meeting_room_booking
+Apply for personal leave Monday,leave_request
+Search for staff member contact,directory_search
+I need a meeting space Tuesday,meeting_room_booking
+I need phone number information,company_info
+I'm looking for staff member,directory_search
+What's our company values?,company_info
+What is my yearly salary?,salary_inquiry
+I want to know my this month compensation,salary_inquiry
+Book me a conference hall for tomorrow,meeting_room_booking
+Can I see my earnings details?,salary_inquiry
+What am I being paid current?,salary_inquiry
+Please show my wage breakdown,salary_inquiry
+I need person's phone number,directory_search
+Show me mission information,company_info
+Can you find Tom Wilson's details?,directory_search
+I'd like to apply for holiday next week,leave_request
+I want to schedule a meeting space next month,meeting_room_booking
+I'd like to apply for sick leave a week,leave_request
+Find staff named Anderson at InnovateCo,employee_search
+What's our company address?,company_info
+I'm requesting annual leave for tomorrow,leave_request
+Can you show John's's details?,employee_info
+What am I being paid this year?,salary_inquiry
+What's Sarah Johnson's details?,directory_search
+Tell me about my colleague's,employee_info
+Who is Taylor at our organization?,employee_search
+I need employee's email,directory_search
+I want to know about history,company_info
+I'd like to reserve a conference hall at 2pm,meeting_room_booking
+I'm looking for Anderson at our organization,employee_search
+Show me my manager's's email,employee_info
+I need website information,company_info
+I want to take annual leave this Friday,leave_request
+I need a conference hall next week,meeting_room_booking
+Tell me about the HR director's,employee_info
+What is my monthly salary?,salary_inquiry
+Tell me about our mission,company_info
+I'm looking for Taylor at ABC Corp,employee_search
+Can I get headquarters details?,company_info
+I need to check my current wage,salary_inquiry
+Apply for time off next week,leave_request
+Get the HR director's's phone,employee_info
+Please show my paycheck breakdown,salary_inquiry
+Can I reserve conference hall Friday?,meeting_room_booking
+I need Lisa Davis's contact info,directory_search
+I'm looking for Wilson at our organization,employee_search
+I need a meeting space this afternoon,meeting_room_booking
+I'd like to reserve a meeting space this afternoon,meeting_room_booking
+Please show my compensation breakdown,salary_inquiry
+Get my manager's's title,employee_info
+Book me a meeting room for this afternoon,meeting_room_booking
+Apply for holiday a week,leave_request
+I want my colleague's's information,employee_info
+What's staff member's extension?,directory_search
+Can you show me my income information?,salary_inquiry
+Tell me about our policy,company_info
+I want to know about address,company_info
+What's my current income?,salary_inquiry
+Tell me about John's,employee_info
+I want to know about address,company_info
+I'd like to apply for annual leave next week,leave_request
+Is boardroom available this afternoon?,meeting_room_booking
+Tell me about my colleague's,employee_info
+Reserve a conference room for next month,meeting_room_booking
+I need a conference hall Friday,meeting_room_booking
+I need to know the mission,company_info
+I'd like to reserve a meeting room Monday,meeting_room_booking
+Please show my wage breakdown,salary_inquiry
+I need my manager's's reports,employee_info
+Find John Smith in the company directory,directory_search
+Find staff member in the employee directory,directory_search
+Search for Sarah Johnson contact,directory_search
+Schedule me a boardroom for for 3 hours,meeting_room_booking
+Search for staff member contact,directory_search
+Look up Mike Brown in contact list,directory_search
+What's our company locations?,company_info
+Look up Wilson from GlobalTech,employee_search
+What is John's's email?,employee_info
+Book me a conference hall for Tuesday,meeting_room_booking
+Find John's's role,employee_info
+I want to take holiday Monday,leave_request
+Find Lisa Davis in the contact list,directory_search
+Schedule me a meeting room for tomorrow,meeting_room_booking
+Look up Thomas from the company,employee_search
+Get the HR director's's phone,employee_info
+Can you show Sarah's's details?,employee_info
+I'm requesting time off for tomorrow,leave_request
+Look up Davis from the company,employee_search
+Can you provide headquarters details?,company_info
+What's Sarah's's position?,employee_info
+Can I request holiday for next month?,leave_request
+I need to check my this year salary,salary_inquiry
+I need John's's department,employee_info
+What is my this month salary?,salary_inquiry
+Search for Smith at our organization,employee_search
+I want to book holiday two days,leave_request
+Can I reserve meeting space today?,meeting_room_booking
+Search for Sarah Johnson contact,directory_search
+Look up person in company directory,directory_search
+I need a conference room tomorrow,meeting_room_booking
+I need a meeting room for 3 hours,meeting_room_booking
+I need my paycheck statement,salary_inquiry
+I want to schedule a conference room at 2pm,meeting_room_booking
+Apply for personal leave a week,leave_request
+Find staff named Wilson at TechCorp,employee_search
+Can I get history details?,company_info
+Look up Tom Wilson's information,directory_search
+Find Sarah Johnson in the contact list,directory_search
+Who is Smith at ABC Corp?,employee_search
+Search for Taylor at XYZ Inc,employee_search
+Look up Lisa Davis in staff directory,directory_search
+What is my current salary?,salary_inquiry
+Find employees at InnovateCo named Thomas,employee_search
+Can you provide website details?,company_info
+Can you show me my wage information?,salary_inquiry
+Request personal leave for this Friday,leave_request
+I need to know the CEO's's department,employee_info
+I want to know my annual compensation,salary_inquiry
+Can you find Mike Brown's details?,directory_search
+Look for Taylor in our organization,employee_search
+Get Sarah's's reports,employee_info
+Search for Anderson at the company,employee_search
+I want to take sick leave next week,leave_request
+Request PTO for a week,leave_request
+What's our company values?,company_info
+Request sick leave for a week,leave_request
+I'm looking for Taylor at the company,employee_search
+Apply for PTO tomorrow,leave_request
+I want to take sick leave next month,leave_request
+I'm looking for person,directory_search
+Can you show me my income information?,salary_inquiry
+Apply for annual leave next month,leave_request
+Who is Taylor at XYZ Inc?,employee_search
+Can you show Sarah's's details?,employee_info
+Can I reserve meeting space tomorrow?,meeting_room_booking
+Who is Brown at GlobalTech?,employee_search
+I need to check my monthly wage,salary_inquiry
+Can I request personal leave for three days?,leave_request
+Look up Taylor from ABC Corp,employee_search
+What is my manager's's office location?,employee_info
+Search for Davis at InnovateCo,employee_search
+I need to know the history,company_info
+I want to know about address,company_info
+Can I get mission details?,company_info
+I'm looking for employee,directory_search
+Look up Sarah Johnson's information,directory_search
+Tell me about John's,employee_info
+Find employees at ABC Corp named Wilson,employee_search
+I want to know my monthly compensation,salary_inquiry
+Can I have holiday a week?,leave_request
+I want to know about phone number,company_info
+Can you show me my wage information?,salary_inquiry
+I need staff member's contact info,directory_search
+Show me website information,company_info

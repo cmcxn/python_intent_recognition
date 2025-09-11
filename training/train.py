@@ -455,7 +455,8 @@ def main():
         classifier = RoBERTaIntentClassifier(
             model_name=config['model_name'],
             num_labels=config['num_labels'],
-            max_length=config['max_length']
+            max_length=config['max_length'],
+            offline_mode=True  # Use offline mode for testing
         )
         
         # Load label mappings

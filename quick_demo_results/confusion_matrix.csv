@@ -1,0 +1,8 @@
+,salary_inquiry,meeting_room_booking,leave_request,directory_search,company_info,employee_info,employee_search
+salary_inquiry,0,0,0,0,0,6,0
+meeting_room_booking,0,0,1,0,0,4,1
+leave_request,0,0,0,0,0,6,0
+directory_search,0,0,2,0,0,4,0
+company_info,0,0,1,0,0,3,2
+employee_info,0,0,0,0,0,5,1
+employee_search,0,0,0,0,0,5,1

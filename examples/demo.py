@@ -113,7 +113,8 @@ class CompletePipelineDemo:
             classifier = RoBERTaIntentClassifier(
                 model_name=self.config['model_name'],
                 num_labels=self.config['num_labels'],
-                max_length=self.config['max_length']
+                max_length=self.config['max_length'],
+                offline_mode=True  # Use offline mode for demo
             )
             
             # Load label mappings
