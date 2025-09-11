@@ -1,0 +1,20 @@
+{
+  "texts": [
+    "What's the CEO's title?",
+    "Find the HR director's information",
+    "Find employees at ABC Corp named Smith",
+    "Search for Johnson at TechCorp",
+    "Look up Brown from GlobalTech",
+    "Who is Davis at InnovateCo?",
+    "Find Wilson working at XYZ Inc"
+  ],
+  "labels": [
+    "employee_info",
+    "employee_info",
+    "employee_search",
+    "employee_search",
+    "employee_search",
+    "employee_search",
+    "employee_search"
+  ]
+}
