@@ -30,7 +30,10 @@ from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 import torch
 
 print("gpu_count=", torch.cuda.device_count())
-print("gpu0=", torch.cuda.get_device_name(0))
+if torch.cuda.is_available():
+    print("gpu0=", torch.cuda.get_device_name(0))
+else:
+    print("gpu0= No GPU available")
 # Chinese RoBERTa model configuration
 MODEL_NAME = "hfl/chinese-roberta-wwm-ext"  # 中文RoBERTa-WWM-Ext
 
@@ -93,7 +96,13 @@ class DataCollator:
         labels = [f["label_id"] for f in features]
         enc = self.tokenizer(texts, truncation=True, padding=True, 
                            max_length=self.max_len, return_tensors="pt")
-        enc["labels"] = enc["input_ids"].new_tensor(labels)
+        
+        # Handle the case where input_ids might be None due to tokenizer issues
+        if enc["input_ids"] is None:
+            raise ValueError("Tokenizer returned None for input_ids. Check tokenizer configuration.")
+        
+        # Use torch.tensor instead of input_ids.new_tensor to be more robust
+        enc["labels"] = torch.tensor(labels, dtype=torch.long)
         return enc
 
 def detect_device():
@@ -152,6 +161,12 @@ def main():
         # Load tokenizer
         print("📝 Loading tokenizer...")
         tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+        
+        # Fix padding token issue for Chinese RoBERTa
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token
+            print("✓ Set padding token to EOS token")
+        
         print("✓ Tokenizer loaded successfully")
         
         # Load datasets

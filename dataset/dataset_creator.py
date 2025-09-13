@@ -40,15 +40,14 @@ class ChineseOfficeIntentDatasetCreator:
         """
         self.samples_per_intent = samples_per_intent
         # Updated to match reference implementation with Chinese labels
+        # Only 6 intents to match train_intent.py expectations
         self.intent_labels = [
             "CHECK_PAYSLIP",
             "BOOK_MEETING_ROOM", 
             "REQUEST_LEAVE",
             "CHECK_BENEFITS",
             "IT_TICKET",
-            "EXPENSE_REIMBURSE",
-            "COMPANY_LOOKUP",
-            "USER_LOOKUP"
+            "EXPENSE_REIMBURSE"
         ]
         
         # Define templates and vocabulary for each intent
@@ -367,10 +366,6 @@ class ChineseOfficeIntentDatasetCreator:
                 samples = self._generate_samples_for_intent(intent, self.it_templates, self.it_vocab)
             elif intent == "EXPENSE_REIMBURSE":
                 samples = self._generate_samples_for_intent(intent, self.expense_templates, self.expense_vocab)
-            elif intent == "COMPANY_LOOKUP":
-                samples = self._generate_samples_for_intent(intent, self.company_templates, self.company_vocab)
-            elif intent == "USER_LOOKUP":
-                samples = self._generate_user_lookup_samples()
             
             # Add samples and labels
             texts.extend(samples)
