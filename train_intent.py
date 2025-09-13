@@ -28,6 +28,8 @@ from transformers import (
 import numpy as np
 from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 import torch
+from sklearn.metrics import classification_report, confusion_matrix
+
 
 print("gpu_count=", torch.cuda.device_count())
 if torch.cuda.is_available():
@@ -39,24 +41,39 @@ MODEL_NAME = "hfl/chinese-roberta-wwm-ext"  # 中文RoBERTa-WWM-Ext
 
 # Intent labels matching the reference implementation
 LABEL_LIST = ["CHECK_PAYSLIP","BOOK_MEETING_ROOM","REQUEST_LEAVE",
-              "CHECK_BENEFITS","IT_TICKET","EXPENSE_REIMBURSE"]
+              "CHECK_BENEFITS","IT_TICKET","EXPENSE_REIMBURSE","COMPANY_LOOKUP",
+            "USER_LOOKUP"]
 LABEL2ID = {l:i for i,l in enumerate(LABEL_LIST)}
 ID2LABEL = {i:l for l,i in LABEL2ID.items()}
 
+def _normalize_and_map_labels(df: pd.DataFrame, path: str) -> pd.DataFrame:
+    # 统一格式：去空格、大写
+    df["label"] = df["label"].astype(str).str.strip().str.upper()
+    known = set(LABEL2ID.keys())
+    unknown_labels = sorted(set(df["label"]) - known)
+    if unknown_labels:
+        # 直接报错，提示未知标签有哪些 & 数量
+        counts = df[df["label"].isin(unknown_labels)]["label"].value_counts().to_dict()
+        raise ValueError(f"{path} 存在未在 LABEL_LIST 中的标签: {unknown_labels}，计数: {counts}\n"
+                         f"请修正 CSV 的 label 或更新 LABEL_LIST。")
+    df["label_id"] = df["label"].map(LABEL2ID).astype(int)
+    return df
+
 def load_csv(path: str) -> Dataset:
-    """
-    Load dataset from CSV file.
-    
-    Args:
-        path: Path to CSV file
-        
-    Returns:
-        Hugging Face Dataset object
-    """
     df = pd.read_csv(path)
-    df = df.dropna()
-    df["label_id"] = df["label"].map(LABEL2ID)
-    return Dataset.from_pandas(df[["text","label_id"]])
+    # 兼容常见文本列名
+    text_candidates = [c for c in ["text","question","utterance","sentence","content"] if c in df.columns]
+    if not text_candidates:
+        raise ValueError(f"{path} 缺少文本列（期望列名之一：text/question/utterance/sentence/content）")
+    text_col = text_candidates[0]
+
+    df = df[[text_col, "label"]].dropna()
+    df = df.rename(columns={text_col: "text"})
+    df["text"] = df["text"].astype(str).str.strip()
+
+    df = _normalize_and_map_labels(df, path)
+    return Dataset.from_pandas(df[["text","label_id"]], preserve_index=False)
+
 
 def compute_metrics(eval_pred):
     """
@@ -93,7 +110,8 @@ class DataCollator:
             Tokenized batch ready for model input
         """
         texts = [f["text"] for f in features]
-        labels = [f["label_id"] for f in features]
+        # labels = [f["label_id"] for f in features]
+        labels = [int(f["label_id"]) for f in features]
         enc = self.tokenizer(texts, truncation=True, padding=True, 
                            max_length=self.max_len, return_tensors="pt")
         
@@ -163,10 +181,16 @@ def main():
         tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
         
         # Fix padding token issue for Chinese RoBERTa
+        # 确保有 pad_token（BERT 类一般都有 [PAD]，此处兜底更稳）
         if tokenizer.pad_token is None:
-            tokenizer.pad_token = tokenizer.eos_token
-            print("✓ Set padding token to EOS token")
-        
+            if tokenizer.sep_token is not None:
+                tokenizer.pad_token = tokenizer.sep_token
+            elif tokenizer.unk_token is not None:
+                tokenizer.pad_token = tokenizer.unk_token
+            else:
+                tokenizer.add_special_tokens({"pad_token": "[PAD]"})
+            print(f"✓ Set padding token -> id={tokenizer.pad_token_id}")
+
         print("✓ Tokenizer loaded successfully")
         
         # Load datasets
@@ -255,6 +279,20 @@ def main():
         print(f"F1 Score: {results['eval_f1']:.4f}")
         print(f"Precision: {results['eval_precision']:.4f}")
         print(f"Recall: {results['eval_recall']:.4f}")
+        pred = trainer.predict(dev_ds)
+        y_true = pred.label_ids
+        y_pred = np.argmax(pred.predictions, axis=-1)
+
+        # 分类报告（逐类 Precision/Recall/F1）
+        print(classification_report(
+            y_true, y_pred,
+            target_names=[l for l in LABEL_LIST],
+            digits=4
+        ))
+
+        # 混淆矩阵
+        cm = confusion_matrix(y_true, y_pred)
+        print("Confusion Matrix:\n", cm)
         
     except Exception as e:
         print(f"❌ Training failed: {e}")
