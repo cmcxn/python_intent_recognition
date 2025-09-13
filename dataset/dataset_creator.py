@@ -4,13 +4,15 @@ Dataset Creator for Chinese Office Domain Intent Recognition
 This module generates synthetic training data for Chinese office domain intent classification.
 It creates diverse sample queries for each intent to train the Chinese RoBERTa model effectively.
 
-The dataset includes 6 intent categories (aligned with reference implementation):
+The dataset includes 8 intent categories (aligned with reference implementation):
 1. CHECK_PAYSLIP - 查询工资单相关问题
 2. BOOK_MEETING_ROOM - 会议室预订请求
 3. REQUEST_LEAVE - 请假申请
 4. CHECK_BENEFITS - 福利查询
 5. IT_TICKET - IT支持工单
 6. EXPENSE_REIMBURSE - 费用报销
+7. COMPANY_LOOKUP - 查公司相关信息
+8. USER_LOOKUP - 查用户相关信息
 """
 
 import json
@@ -44,7 +46,9 @@ class ChineseOfficeIntentDatasetCreator:
             "REQUEST_LEAVE",
             "CHECK_BENEFITS",
             "IT_TICKET",
-            "EXPENSE_REIMBURSE"
+            "EXPENSE_REIMBURSE",
+            "COMPANY_LOOKUP",
+            "USER_LOOKUP"
         ]
         
         # Define templates and vocabulary for each intent
@@ -169,6 +173,146 @@ class ChineseOfficeIntentDatasetCreator:
         self.expense_vocab = {
             "expense_type": ["差旅费", "交通费", "餐费", "住宿费", "培训费", "办公用品", "通讯费", "会议费", "招待费", "加班餐费"]
         }
+        
+        # COMPANY_LOOKUP templates (查公司)
+        self.company_templates = [
+            "帮我介绍一下{company}",
+            "帮我查询一下{company}",
+            "我想了解{company}",
+            "查询{company}的信息",
+            "请介绍{company}",
+            "{company}的详细信息",
+            "我需要{company}的资料",
+            "能告诉我{company}的情况吗？",
+            "查看{company}的详情",
+            "{company}是什么公司？"
+        ]
+        
+        self.company_vocab = {
+            "company": ["数科公司", "通用技术集团数字智能科技有限公司", "数字智能科技有限公司", "集团公司", "科技公司", "技术公司"]
+        }
+        
+        # USER_LOOKUP templates (查用户) - organized by query type
+        self.user_basic_templates = [
+            "帮我查询一下{person}",
+            "查询{person}的信息",
+            "我想了解{person}",
+            "请查找{person}",
+            "帮我找{person}"
+        ]
+        
+        self.user_clarified_templates = [
+            "帮我查询一下{person}，{name_clarification}",
+            "查询{person}，{name_clarification}",
+            "我要找{person}，{name_clarification}"
+        ]
+        
+        self.user_company_templates = [
+            "查询{company}的{person}",
+            "帮我查一下{company}的{person}",
+            "我想了解{company}的{person}",
+            "{company}有个{person}吗？"
+        ]
+        
+        self.user_contact_templates = [
+            "帮我查一下{company}{person}的{contact_type}",
+            "查询{username}的{contact_type}",
+            "{person}的{contact_type}是多少？",
+            "我需要{person}的{contact_type}"
+        ]
+        
+        self.user_department_templates = [
+            "帮我查一下{company}的{person}目前在哪个{org_unit}？",
+            "{person}在{company}的{job_aspect}是什么？",
+            "帮我查一下{company}{department}的{job_title}是谁",
+            "帮我查询一下{company}{department}的人员有哪些？"
+        ]
+        
+        self.user_attribute_templates = [
+            "查询一下{company}{department}的{gender}员工都有谁",
+            "帮我查询一下办公地点在{location}的{person}",
+            "帮我查询一下{gender}的{person}",
+            "办公地点在{location}的员工有哪些？"
+        ]
+        
+        self.user_reverse_templates = [
+            "{phone_number}是谁的{contact_type}？",
+            "帮我查下{contact_type}尾号{phone_suffix}的用户是谁？",
+            "这个{contact_type}{phone_number}是谁的？"
+        ]
+        
+        self.user_directory_templates = [
+            "查询{company}的通讯录",
+            "帮我看一下{company}的员工名单",
+            "{company}的联系人列表",
+            "我需要{company}的人员信息"
+        ]
+        
+        self.user_vocab = {
+            "person": ["张三", "孔文琦", "李四", "王五", "赵六", "陈七", "刘八", "马九"],
+            "username": ["zhangsan1", "liwang2", "chenliu3", "maqian4", "user123", "test001"],
+            "company": ["数科公司", "通用技术集团数字智能科技有限公司", "公司"],
+            "contact_type": ["手机号", "办公电话", "邮箱号码", "座机号", "电话号码", "联系方式"],
+            "name_clarification": ["张是弓长张", "琦是王字旁加奇怪的奇", "李是木子李", "王是三横一竖王"],
+            "org_unit": ["部门", "科室", "事业部", "中心"],
+            "job_aspect": ["职位", "岗位", "角色", "工作"],
+            "phone_number": ["13282814679", "81168151", "13912345678", "010-88888888", "0571-12345678"],
+            "phone_suffix": ["2345", "8888", "1234", "6789", "0000"],
+            "department": ["管控数字化事业部", "综合办公室", "技术部", "市场部", "人事部", "财务部"],
+            "job_title": ["总监", "总经理", "经理", "主任", "专员", "助理"],
+            "gender": ["男性", "女性"],
+            "location": ["北京", "上海", "深圳", "杭州", "广州", "成都"]
+        }
+    
+    def _generate_user_lookup_samples(self) -> List[str]:
+        """
+        Generate training samples for USER_LOOKUP intent with multiple template groups.
+        
+        Returns:
+            List of generated text samples
+        """
+        samples = []
+        samples_per_group = max(1, self.samples_per_intent // 8)  # Distribute across 8 template groups
+        
+        # Generate samples for each template group
+        template_groups = [
+            (self.user_basic_templates, {"person": self.user_vocab["person"]}),
+            (self.user_clarified_templates, {"person": self.user_vocab["person"], "name_clarification": self.user_vocab["name_clarification"]}),
+            (self.user_company_templates, {"company": self.user_vocab["company"], "person": self.user_vocab["person"]}),
+            (self.user_contact_templates, {"company": self.user_vocab["company"], "person": self.user_vocab["person"], "username": self.user_vocab["username"], "contact_type": self.user_vocab["contact_type"]}),
+            (self.user_department_templates, {"company": self.user_vocab["company"], "person": self.user_vocab["person"], "org_unit": self.user_vocab["org_unit"], "job_aspect": self.user_vocab["job_aspect"], "department": self.user_vocab["department"], "job_title": self.user_vocab["job_title"]}),
+            (self.user_attribute_templates, {"company": self.user_vocab["company"], "department": self.user_vocab["department"], "gender": self.user_vocab["gender"], "location": self.user_vocab["location"], "person": self.user_vocab["person"]}),
+            (self.user_reverse_templates, {"phone_number": self.user_vocab["phone_number"], "contact_type": self.user_vocab["contact_type"], "phone_suffix": self.user_vocab["phone_suffix"]}),
+            (self.user_directory_templates, {"company": self.user_vocab["company"]})
+        ]
+        
+        for templates, vocab in template_groups:
+            for _ in range(samples_per_group):
+                # Randomly select a template
+                template = random.choice(templates)
+                
+                # Fill in placeholders with random vocabulary
+                sample = template
+                for placeholder, options in vocab.items():
+                    if f"{{{placeholder}}}" in sample:
+                        sample = sample.replace(f"{{{placeholder}}}", random.choice(options))
+                
+                samples.append(sample)
+        
+        # Fill remaining samples if we haven't reached the target
+        while len(samples) < self.samples_per_intent:
+            # Pick a random template group
+            templates, vocab = random.choice(template_groups)
+            template = random.choice(templates)
+            
+            sample = template
+            for placeholder, options in vocab.items():
+                if f"{{{placeholder}}}" in sample:
+                    sample = sample.replace(f"{{{placeholder}}}", random.choice(options))
+            
+            samples.append(sample)
+        
+        return samples[:self.samples_per_intent]
     
     def _generate_samples_for_intent(self, intent: str, templates: List[str], vocab: Dict[str, List[str]]) -> List[str]:
         """
@@ -223,6 +367,10 @@ class ChineseOfficeIntentDatasetCreator:
                 samples = self._generate_samples_for_intent(intent, self.it_templates, self.it_vocab)
             elif intent == "EXPENSE_REIMBURSE":
                 samples = self._generate_samples_for_intent(intent, self.expense_templates, self.expense_vocab)
+            elif intent == "COMPANY_LOOKUP":
+                samples = self._generate_samples_for_intent(intent, self.company_templates, self.company_vocab)
+            elif intent == "USER_LOOKUP":
+                samples = self._generate_user_lookup_samples()
             
             # Add samples and labels
             texts.extend(samples)
@@ -325,7 +473,7 @@ def main():
     print("Creating Chinese Office Domain Intent Recognition Dataset...")
     print("创建中文办公领域意图识别数据集...")
     
-    # Create dataset with 100 samples per intent (600 total samples)
+    # Create dataset with 100 samples per intent (800 total samples)
     creator = ChineseOfficeIntentDatasetCreator(samples_per_intent=100)
     
     # Save dataset to data directory
