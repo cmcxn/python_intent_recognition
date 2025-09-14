@@ -24,7 +24,8 @@ from typing import Dict, List, Union
 
 # Intent labels matching the training script
 LABEL_LIST = ["CHECK_PAYSLIP","BOOK_MEETING_ROOM","REQUEST_LEAVE",
-              "CHECK_BENEFITS","IT_TICKET","EXPENSE_REIMBURSE"]
+              "CHECK_BENEFITS","IT_TICKET","EXPENSE_REIMBURSE","COMPANY_LOOKUP",
+            "USER_LOOKUP"]
 
 class IntentClassifier:
     """

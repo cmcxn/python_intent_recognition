@@ -32,7 +32,8 @@ except Exception as e:
     print(f"Warning: Could not import IntentClassifier: {e}")
     CLASSIFIER_AVAILABLE = False
     LABEL_LIST = ["CHECK_PAYSLIP","BOOK_MEETING_ROOM","REQUEST_LEAVE",
-                  "CHECK_BENEFITS","IT_TICKET","EXPENSE_REIMBURSE"]
+                  "CHECK_BENEFITS","IT_TICKET","EXPENSE_REIMBURSE","COMPANY_LOOKUP",
+            "USER_LOOKUP"]
 
 # Global classifier instance
 classifier = None
