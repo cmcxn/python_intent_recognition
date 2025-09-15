@@ -212,3 +212,22 @@ This implementation includes extensive comments and documentation to help unders
 - Model evaluation and validation techniques for Chinese text
 - GPU acceleration and optimization strategies
 - Chinese text processing and tokenization methods
+## Docker Image & GitHub Actions
+
+This project provides a Dockerfile and a GitHub Actions workflow for publishing a Docker image to Docker Hub.
+
+### Build locally
+
+```bash
+docker build -t your-username/python-intent-recognition .
+docker run -p 8000:8000 your-username/python-intent-recognition
+```
+
+### Configure GitHub Actions
+
+1. Create repository secrets named `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` with your Docker Hub credentials.
+2. The workflow in `.github/workflows/docker-publish.yml` runs on pushes to `main`, tags beginning with `v`, or manual dispatch.
+3. The image is published as `docker.io/<username>/python-intent-recognition:latest`.
+
+You can trigger the workflow from the Actions tab once the secrets are configured.
+
