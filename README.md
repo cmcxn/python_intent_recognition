@@ -68,6 +68,7 @@ chinese_intent_recognition/
    ```bash
    python -m dataset.dataset_creator
    ```
+   Running the generator multiple times will append the newly created splits to any existing `data/train.csv` or `data/test.csv` files while removing duplicate `(text, label)` pairs. To regenerate a clean dataset from scratch, delete the `data/` directory (or the individual split files) before re-running the command.
 
 3. Train the Chinese RoBERTa model:
    ```bash

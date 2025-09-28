@@ -18,7 +18,7 @@ The dataset includes 8 intent categories (aligned with reference implementation)
 import json
 import pandas as pd
 import random
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 from pathlib import Path
 
 
@@ -415,6 +415,38 @@ class ChineseOfficeIntentDatasetCreator:
         
         return train_df, test_df
     
+    def _load_existing_split(self, output_path: Path, split_name: str) -> Optional[pd.DataFrame]:
+        """Load an existing train/test split if present."""
+        csv_path = output_path / f"{split_name}.csv"
+        json_path = output_path / f"{split_name}.json"
+
+        if csv_path.exists():
+            return pd.read_csv(csv_path)
+
+        if json_path.exists():
+            with open(json_path, "r") as f:
+                data = json.load(f)
+            texts = data.get("texts", [])
+            labels = data.get("labels", [])
+            return pd.DataFrame({"text": texts, "label": labels})
+
+        return None
+
+    @staticmethod
+    def _merge_splits(existing_df: Optional[pd.DataFrame], new_df: pd.DataFrame) -> pd.DataFrame:
+        """Append new samples to an existing split and remove duplicates."""
+        if existing_df is None or existing_df.empty:
+            return new_df.reset_index(drop=True)
+
+        combined_df = pd.concat([existing_df, new_df], ignore_index=True)
+
+        if {"text", "label"}.issubset(combined_df.columns):
+            combined_df = combined_df.drop_duplicates(subset=["text", "label"]).reset_index(drop=True)
+        else:
+            combined_df = combined_df.drop_duplicates().reset_index(drop=True)
+
+        return combined_df
+
     def save_dataset(self, output_dir: str = "data"):
         """
         Generate and save the dataset to files.
@@ -423,11 +455,20 @@ class ChineseOfficeIntentDatasetCreator:
             output_dir: Directory to save the dataset files
         """
         output_path = Path(output_dir)
-        output_path.mkdir(exist_ok=True)
-        
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        existing_train_df = self._load_existing_split(output_path, "train")
+        existing_test_df = self._load_existing_split(output_path, "test")
+
+        if existing_train_df is not None or existing_test_df is not None:
+            print("Existing dataset detected. Appending new samples and preserving history.")
+
         # Generate train/test split
         train_df, test_df = self.create_train_test_split()
-        
+
+        train_df = self._merge_splits(existing_train_df, train_df)
+        test_df = self._merge_splits(existing_test_df, test_df)
+
         # Save as CSV files
         train_df.to_csv(output_path / "train.csv", index=False)
         test_df.to_csv(output_path / "test.csv", index=False)
@@ -449,19 +490,64 @@ class ChineseOfficeIntentDatasetCreator:
             json.dump(test_data, f, indent=2)
         
         # Save label mapping
+        label_mapping_path = output_path / "label_mapping.json"
+        existing_label_mapping: Optional[Dict] = None
+
+        if label_mapping_path.exists():
+            with open(label_mapping_path, "r") as f:
+                existing_label_mapping = json.load(f)
+
+        combined_labels = pd.concat(
+            [train_df["label"], test_df["label"]], ignore_index=True
+        ).dropna().unique().tolist()
+        combined_label_set = set(combined_labels)
+
+        label_to_id: Dict[str, int] = {}
+        used_ids = set()
+
+        if existing_label_mapping:
+            existing_map = {
+                label: int(idx)
+                for label, idx in existing_label_mapping.get("label_to_id", {}).items()
+            }
+            for label, idx in existing_map.items():
+                if label in combined_label_set:
+                    label_to_id[label] = idx
+                    used_ids.add(idx)
+        else:
+            for label in self.intent_labels:
+                if label in combined_label_set and label not in label_to_id:
+                    idx = len(label_to_id)
+                    label_to_id[label] = idx
+                    used_ids.add(idx)
+
+        next_id = max(used_ids) + 1 if used_ids else 0
+        for label in sorted(combined_labels):
+            if label not in label_to_id:
+                while next_id in used_ids:
+                    next_id += 1
+                label_to_id[label] = next_id
+                used_ids.add(next_id)
+                next_id += 1
+
+        intent_labels = [
+            label for label, idx in sorted(label_to_id.items(), key=lambda item: item[1])
+        ]
+        id_to_label = {idx: label for label, idx in label_to_id.items()}
+
         label_mapping = {
-            'intent_labels': self.intent_labels,
-            'label_to_id': {label: i for i, label in enumerate(self.intent_labels)},
-            'id_to_label': {i: label for i, label in enumerate(self.intent_labels)}
+            "intent_labels": intent_labels,
+            "label_to_id": label_to_id,
+            "id_to_label": id_to_label,
         }
-        
-        with open(output_path / "label_mapping.json", 'w') as f:
+
+        with open(label_mapping_path, "w") as f:
             json.dump(label_mapping, f, indent=2)
-        
+
         print(f"Dataset saved to {output_path}")
-        print(f"Training samples: {len(train_df)}")
-        print(f"Test samples: {len(test_df)}")
-        print(f"Intents: {len(self.intent_labels)}")
+        print(f"Training samples (after merge): {len(train_df)}")
+        print(f"Test samples (after merge): {len(test_df)}")
+        print(f"Intents in merged dataset: {len(intent_labels)}")
         
         # Print sample distribution
         print("\nSample distribution:")
