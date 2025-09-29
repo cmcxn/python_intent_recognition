@@ -70,6 +70,7 @@ python dataset/dataset_creator.py \
 6. `EXPENSE_REIMBURSE` - 费用报销
 7. `COMPANY_LOOKUP` - 查公司相关信息
 8. `USER_LOOKUP` - 查用户相关信息
+9. `QUERY_RESPONSIBLE_PERSON` - 查询负责人相关信息
 
 ## 输出文件 / Output Files
 
