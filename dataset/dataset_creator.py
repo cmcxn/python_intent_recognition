@@ -4,7 +4,7 @@ Dataset Creator for Chinese Office Domain Intent Recognition
 This module generates synthetic training data for Chinese office domain intent classification.
 It creates diverse sample queries for each intent to train the Chinese RoBERTa model effectively.
 
-The dataset includes 8 intent categories (aligned with reference implementation):
+The dataset includes 9 intent categories (aligned with reference implementation):
 1. CHECK_PAYSLIP - 查询工资单相关问题
 2. BOOK_MEETING_ROOM - 会议室预订请求
 3. REQUEST_LEAVE - 请假申请
@@ -13,6 +13,7 @@ The dataset includes 8 intent categories (aligned with reference implementation)
 6. EXPENSE_REIMBURSE - 费用报销
 7. COMPANY_LOOKUP - 查公司相关信息
 8. USER_LOOKUP - 查用户相关信息
+9. QUERY_RESPONSIBLE_PERSON - 查询负责人相关信息
 """
 
 import json
@@ -50,7 +51,8 @@ class ChineseOfficeIntentDatasetCreator:
             "IT_TICKET",
             "EXPENSE_REIMBURSE",
             "COMPANY_LOOKUP",
-            "USER_LOOKUP"
+            "USER_LOOKUP",
+            "QUERY_RESPONSIBLE_PERSON"
         ]
         
         # Filter to selected intents if specified
@@ -273,6 +275,48 @@ class ChineseOfficeIntentDatasetCreator:
             "gender": ["男性", "女性"],
             "location": ["北京", "上海", "深圳", "杭州", "广州", "成都"]
         }
+        
+        # QUERY_RESPONSIBLE_PERSON templates (查询负责人)
+        self.responsible_person_templates = [
+            "查{department}负责人",
+            "查一下{company}的{responsible_role}",
+            "告诉我{company}的{responsible_role}",
+            "如何能找到{company}的{responsible_role}？",
+            "{company}的{responsible_role}是谁",
+            "{company}的{responsible_role}是谁？",
+            "给我一下{company}{responsible_role}的{contact_info}",
+            "查一下{company}{department}的{responsible_role}是谁",
+            "查一下{company}{department}的{responsible_role}",
+            "{company}{department}，谁负责？",
+            "{company}{department}，谁说了算？",
+            "帮我找一下{company}{department}的{responsible_role}",
+            "我想找{company}{department}的{responsible_role}",
+            "帮我查询一下{company}的{responsible_role}是谁",
+            "我需要联系{company}的{responsible_role}",
+            "怎么联系{company}的{responsible_role}？",
+            "{company}的{responsible_role}有谁",
+            "{company}的{responsible_role}是谁",
+            "帮我查询一下{company}的{responsible_role}是谁",
+            "{company}的{responsible_role}是谁",
+            "查询{company}负责人的{contact_info}",
+            "有{company}负责人的{contact_info}吗？",
+            "{company}的负责人是谁？",
+            "帮我找一下{company}的{responsible_role}",
+            "帮我查一下{company}的{responsible_role}",
+            "查询一下{company}{department}的负责人有谁",
+            "列出{company}{department}的所有负责人",
+            "帮我查下{company}{department}的{responsible_role}是谁",
+            "{company}{department}的{responsible_role}叫什么名字？",
+            "如何联系{company}{department}的{responsible_role}？",
+            "{company}{department}的{responsible_role}是谁"
+        ]
+        
+        self.responsible_person_vocab = {
+            "company": ["数科公司", "通用技术集团数字智能科技有限公司", "集团总部", "健康管理公司", "集团公司", "数字智能科技有限公司"],
+            "department": ["研发中心", "市场营销部", "管控数字化事业部", "财务部", "综合管理部", "技术部", "人事部"],
+            "responsible_role": ["领导", "负责人", "决策人", "主要领导", "话事人", "管事人", "牵头人", "一把手", "管理者", "拍板人", "主管领导", "老板", "老大", "头儿", "归口领导", "对接人"],
+            "contact_info": ["邮箱", "电话", "联系方式", "手机号"]
+        }
     
     def _generate_user_lookup_samples(self) -> List[str]:
         """
@@ -381,6 +425,8 @@ class ChineseOfficeIntentDatasetCreator:
                 samples = self._generate_samples_for_intent(intent, self.company_templates, self.company_vocab)
             elif intent == "USER_LOOKUP":
                 samples = self._generate_user_lookup_samples()
+            elif intent == "QUERY_RESPONSIBLE_PERSON":
+                samples = self._generate_samples_for_intent(intent, self.responsible_person_templates, self.responsible_person_vocab)
             
             # Add samples and labels
             texts.extend(samples)
@@ -622,7 +668,8 @@ def main():
         "IT_TICKET",
         "EXPENSE_REIMBURSE",
         "COMPANY_LOOKUP",
-        "USER_LOOKUP"
+        "USER_LOOKUP",
+        "QUERY_RESPONSIBLE_PERSON"
     ]
     
     parser = argparse.ArgumentParser(description="Chinese Office Domain Intent Recognition Dataset Creator")
