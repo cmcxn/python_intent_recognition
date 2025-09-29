@@ -33,7 +33,7 @@ except Exception as e:
     CLASSIFIER_AVAILABLE = False
     LABEL_LIST = ["CHECK_PAYSLIP","BOOK_MEETING_ROOM","REQUEST_LEAVE",
                   "CHECK_BENEFITS","IT_TICKET","EXPENSE_REIMBURSE","COMPANY_LOOKUP",
-            "USER_LOOKUP"]
+            "USER_LOOKUP","QUERY_RESPONSIBLE_PERSON"]
 
 # Global classifier instance
 classifier = None
@@ -117,6 +117,8 @@ def create_demo_prediction(text: str) -> Dict:
         intent = "IT_TICKET"
     elif any(word in text_lower for word in ['报销', '费用', '发票']):
         intent = "EXPENSE_REIMBURSE"
+    elif any(word in text_lower for word in ['负责人', '领导', '决策人', '管理者', '老板', '一把手', '主管', '牵头人']):
+        intent = "QUERY_RESPONSIBLE_PERSON"
     else:
         intent = random.choice(LABEL_LIST)
     
