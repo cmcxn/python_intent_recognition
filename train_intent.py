@@ -42,7 +42,7 @@ MODEL_NAME = "hfl/chinese-roberta-wwm-ext"  # 中文RoBERTa-WWM-Ext
 # Intent labels matching the reference implementation
 LABEL_LIST = ["CHECK_PAYSLIP","BOOK_MEETING_ROOM","REQUEST_LEAVE",
               "CHECK_BENEFITS","IT_TICKET","EXPENSE_REIMBURSE","COMPANY_LOOKUP",
-            "USER_LOOKUP"]
+            "USER_LOOKUP","QUERY_RESPONSIBLE_PERSON"]
 LABEL2ID = {l:i for i,l in enumerate(LABEL_LIST)}
 ID2LABEL = {i:l for l,i in LABEL2ID.items()}
 
