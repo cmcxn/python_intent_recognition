@@ -18,7 +18,8 @@ The dataset includes 8 intent categories (aligned with reference implementation)
 import json
 import pandas as pd
 import random
-from typing import List, Dict, Tuple
+import argparse
+from typing import List, Dict, Tuple, Optional
 from pathlib import Path
 
 
@@ -31,12 +32,13 @@ class ChineseOfficeIntentDatasetCreator:
     their intentions in a Chinese office environment.
     """
     
-    def __init__(self, samples_per_intent: int = 100):
+    def __init__(self, samples_per_intent: int = 100, selected_intents: Optional[List[str]] = None):
         """
         Initialize the dataset creator.
         
         Args:
             samples_per_intent: Number of training samples to generate per intent
+            selected_intents: List of specific intents to generate data for. If None, generates for all intents.
         """
         self.samples_per_intent = samples_per_intent
         # Updated to match reference implementation with Chinese labels
@@ -50,6 +52,14 @@ class ChineseOfficeIntentDatasetCreator:
             "COMPANY_LOOKUP",
             "USER_LOOKUP"
         ]
+        
+        # Filter to selected intents if specified
+        if selected_intents is not None:
+            # Validate that selected intents are valid
+            invalid_intents = [intent for intent in selected_intents if intent not in self.intent_labels]
+            if invalid_intents:
+                raise ValueError(f"Invalid intent(s): {invalid_intents}. Valid intents are: {self.intent_labels}")
+            self.intent_labels = selected_intents
         
         # Define templates and vocabulary for each intent
         self._define_intent_templates()
@@ -378,6 +388,67 @@ class ChineseOfficeIntentDatasetCreator:
         
         return texts, labels
     
+    def _load_existing_dataset(self, output_dir: str = "data") -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]:
+        """
+        Load existing train and test datasets if they exist.
+        
+        Args:
+            output_dir: Directory to check for existing dataset files
+            
+        Returns:
+            Tuple of (existing_train_df, existing_test_df) or (None, None) if not found
+        """
+        output_path = Path(output_dir)
+        train_path = output_path / "train.csv"
+        test_path = output_path / "test.csv"
+        
+        existing_train_df = None
+        existing_test_df = None
+        
+        if train_path.exists():
+            try:
+                existing_train_df = pd.read_csv(train_path)
+                print(f"✓ Found existing training data: {len(existing_train_df)} samples")
+            except Exception as e:
+                print(f"⚠ Warning: Could not load existing train.csv: {e}")
+        
+        if test_path.exists():
+            try:
+                existing_test_df = pd.read_csv(test_path)
+                print(f"✓ Found existing test data: {len(existing_test_df)} samples")
+            except Exception as e:
+                print(f"⚠ Warning: Could not load existing test.csv: {e}")
+        
+        return existing_train_df, existing_test_df
+    
+    def _merge_datasets(self, new_train_df: pd.DataFrame, new_test_df: pd.DataFrame, 
+                       existing_train_df: pd.DataFrame, existing_test_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Merge new dataset with existing dataset, removing duplicates.
+        
+        Args:
+            new_train_df: Newly generated training data
+            new_test_df: Newly generated test data
+            existing_train_df: Existing training data
+            existing_test_df: Existing test data
+            
+        Returns:
+            Tuple of (merged_train_df, merged_test_df)
+        """
+        # Combine new and existing data
+        combined_train = pd.concat([existing_train_df, new_train_df], ignore_index=True)
+        combined_test = pd.concat([existing_test_df, new_test_df], ignore_index=True)
+        
+        # Remove exact duplicates (same text and label)
+        merged_train_df = combined_train.drop_duplicates(subset=['text', 'label'], keep='first').reset_index(drop=True)
+        merged_test_df = combined_test.drop_duplicates(subset=['text', 'label'], keep='first').reset_index(drop=True)
+        
+        print(f"📊 Merge statistics:")
+        print(f"   Training: {len(existing_train_df)} existing + {len(new_train_df)} new = {len(merged_train_df)} merged (removed {len(combined_train) - len(merged_train_df)} duplicates)")
+        print(f"   Test: {len(existing_test_df)} existing + {len(new_test_df)} new = {len(merged_test_df)} merged (removed {len(combined_test) - len(merged_test_df)} duplicates)")
+        
+        return merged_train_df, merged_test_df
+    
     def create_train_test_split(self, test_size: float = 0.2) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Create train/test split of the dataset.
@@ -415,18 +486,33 @@ class ChineseOfficeIntentDatasetCreator:
         
         return train_df, test_df
     
-    def save_dataset(self, output_dir: str = "data"):
+    def save_dataset(self, output_dir: str = "data", merge_existing: bool = True):
         """
         Generate and save the dataset to files.
         
         Args:
             output_dir: Directory to save the dataset files
+            merge_existing: Whether to merge with existing dataset files if they exist
         """
         output_path = Path(output_dir)
         output_path.mkdir(exist_ok=True)
         
-        # Generate train/test split
-        train_df, test_df = self.create_train_test_split()
+        # Generate train/test split for new data
+        new_train_df, new_test_df = self.create_train_test_split()
+        
+        # Check for existing data and merge if requested
+        if merge_existing:
+            existing_train_df, existing_test_df = self._load_existing_dataset(output_dir)
+            
+            if existing_train_df is not None and existing_test_df is not None:
+                print(f"🔄 Merging with existing dataset...")
+                train_df, test_df = self._merge_datasets(new_train_df, new_test_df, existing_train_df, existing_test_df)
+            else:
+                print(f"📝 No existing dataset found, creating new dataset...")
+                train_df, test_df = new_train_df, new_test_df
+        else:
+            print(f"📝 Creating new dataset (merge_existing=False)...")
+            train_df, test_df = new_train_df, new_test_df
         
         # Save as CSV files
         train_df.to_csv(output_path / "train.csv", index=False)
@@ -470,22 +556,101 @@ class ChineseOfficeIntentDatasetCreator:
 
 def main():
     """Main function to create and save the Chinese dataset."""
+    # Get all available intents for help text
+    all_intents = [
+        "CHECK_PAYSLIP",
+        "BOOK_MEETING_ROOM", 
+        "REQUEST_LEAVE",
+        "CHECK_BENEFITS",
+        "IT_TICKET",
+        "EXPENSE_REIMBURSE",
+        "COMPANY_LOOKUP",
+        "USER_LOOKUP"
+    ]
+    
+    parser = argparse.ArgumentParser(description="Chinese Office Domain Intent Recognition Dataset Creator")
+    parser.add_argument("--intents", type=str, nargs='+', 
+                       help=f"Specific intents to generate data for. Available: {all_intents}")
+    parser.add_argument("--samples-per-intent", type=int, default=100,
+                       help="Number of samples to generate per intent (default: 100)")
+    parser.add_argument("--output-dir", type=str, default="data",
+                       help="Output directory for dataset files (default: data)")
+    parser.add_argument("--no-merge", action="store_true",
+                       help="Don't merge with existing dataset files")
+    parser.add_argument("--interactive", action="store_true",
+                       help="Interactive mode to select intents")
+    
+    args = parser.parse_args()
+    
     print("Creating Chinese Office Domain Intent Recognition Dataset...")
     print("创建中文办公领域意图识别数据集...")
+    print()
     
-    # Create dataset with 100 samples per intent (800 total samples)
-    creator = ChineseOfficeIntentDatasetCreator(samples_per_intent=100)
+    selected_intents = None
     
-    # Save dataset to data directory
-    creator.save_dataset("data")
+    if args.interactive:
+        # Interactive mode
+        print("Available intents:")
+        for i, intent in enumerate(all_intents, 1):
+            print(f"  {i}. {intent}")
+        print()
+        
+        while True:
+            choice = input("Select intents (comma-separated numbers, or 'all' for all intents): ").strip()
+            if choice.lower() == 'all':
+                selected_intents = None
+                break
+            
+            try:
+                indices = [int(x.strip()) - 1 for x in choice.split(',')]
+                selected_intents = [all_intents[i] for i in indices if 0 <= i < len(all_intents)]
+                if selected_intents:
+                    break
+                else:
+                    print("❌ No valid intents selected. Please try again.")
+            except (ValueError, IndexError):
+                print("❌ Invalid input. Please enter comma-separated numbers or 'all'.")
+    
+    elif args.intents:
+        selected_intents = args.intents
+        # Validate selected intents
+        invalid_intents = [intent for intent in selected_intents if intent not in all_intents]
+        if invalid_intents:
+            print(f"❌ Error: Invalid intent(s): {invalid_intents}")
+            print(f"Available intents: {all_intents}")
+            return
+    
+    # Show what we're generating
+    if selected_intents:
+        print(f"📋 Generating data for selected intents: {selected_intents}")
+    else:
+        print(f"📋 Generating data for all intents: {all_intents}")
+        
+    print(f"📊 Samples per intent: {args.samples_per_intent}")
+    print(f"📁 Output directory: {args.output_dir}")
+    print(f"🔄 Merge with existing: {not args.no_merge}")
+    print()
+    
+    # Create dataset creator
+    try:
+        creator = ChineseOfficeIntentDatasetCreator(
+            samples_per_intent=args.samples_per_intent,
+            selected_intents=selected_intents
+        )
+    except ValueError as e:
+        print(f"❌ Error: {e}")
+        return
+    
+    # Save dataset
+    creator.save_dataset(args.output_dir, merge_existing=not args.no_merge)
     
     print("\n数据集创建完成！Dataset creation completed!")
     print("创建的文件 Files created:")
-    print("- data/train.csv")
-    print("- data/test.csv") 
-    print("- data/train.json")
-    print("- data/test.json")
-    print("- data/label_mapping.json")
+    print(f"- {args.output_dir}/train.csv")
+    print(f"- {args.output_dir}/test.csv") 
+    print(f"- {args.output_dir}/train.json")
+    print(f"- {args.output_dir}/test.json")
+    print(f"- {args.output_dir}/label_mapping.json")
 
 
 if __name__ == "__main__":
