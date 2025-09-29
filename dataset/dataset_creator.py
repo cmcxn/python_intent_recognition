@@ -421,6 +421,30 @@ class ChineseOfficeIntentDatasetCreator:
         
         return existing_train_df, existing_test_df
     
+    def _load_existing_label_mapping(self, output_dir: str = "data") -> Optional[Dict]:
+        """
+        Load existing label mapping if it exists.
+        
+        Args:
+            output_dir: Directory to check for existing label mapping file
+            
+        Returns:
+            Existing label mapping dictionary or None if not found
+        """
+        output_path = Path(output_dir)
+        label_mapping_path = output_path / "label_mapping.json"
+        
+        if label_mapping_path.exists():
+            try:
+                with open(label_mapping_path, 'r') as f:
+                    existing_mapping = json.load(f)
+                print(f"✓ Found existing label mapping with {len(existing_mapping.get('intent_labels', []))} labels")
+                return existing_mapping
+            except Exception as e:
+                print(f"⚠ Warning: Could not load existing label_mapping.json: {e}")
+        
+        return None
+    
     def _merge_datasets(self, new_train_df: pd.DataFrame, new_test_df: pd.DataFrame, 
                        existing_train_df: pd.DataFrame, existing_test_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
@@ -534,12 +558,45 @@ class ChineseOfficeIntentDatasetCreator:
         with open(output_path / "test.json", 'w') as f:
             json.dump(test_data, f, indent=2)
         
-        # Save label mapping
-        label_mapping = {
-            'intent_labels': self.intent_labels,
-            'label_to_id': {label: i for i, label in enumerate(self.intent_labels)},
-            'id_to_label': {i: label for i, label in enumerate(self.intent_labels)}
-        }
+        # Save label mapping - handle merging with existing labels
+        if merge_existing:
+            existing_label_mapping = self._load_existing_label_mapping(output_dir)
+            
+            if existing_label_mapping is not None:
+                # Get all unique labels from the final merged dataset
+                all_labels = sorted(set(train_df['label'].unique().tolist() + test_df['label'].unique().tolist()))
+                
+                # Start with existing labels to preserve their IDs
+                existing_labels = existing_label_mapping.get('intent_labels', [])
+                merged_labels = existing_labels.copy()
+                
+                # Add any new labels that weren't in the existing mapping
+                for label in all_labels:
+                    if label not in merged_labels:
+                        merged_labels.append(label)
+                
+                # Create the merged label mapping
+                label_mapping = {
+                    'intent_labels': merged_labels,
+                    'label_to_id': {label: i for i, label in enumerate(merged_labels)},
+                    'id_to_label': {i: label for i, label in enumerate(merged_labels)}
+                }
+                print(f"📋 Merged label mapping: {len(existing_labels)} existing + {len(merged_labels) - len(existing_labels)} new = {len(merged_labels)} total labels")
+            else:
+                # No existing mapping, create based on dataset labels
+                all_labels = sorted(set(train_df['label'].unique().tolist() + test_df['label'].unique().tolist()))
+                label_mapping = {
+                    'intent_labels': all_labels,
+                    'label_to_id': {label: i for i, label in enumerate(all_labels)},
+                    'id_to_label': {i: label for i, label in enumerate(all_labels)}
+                }
+        else:
+            # Not merging, use only selected intents
+            label_mapping = {
+                'intent_labels': self.intent_labels,
+                'label_to_id': {label: i for i, label in enumerate(self.intent_labels)},
+                'id_to_label': {i: label for i, label in enumerate(self.intent_labels)}
+            }
         
         with open(output_path / "label_mapping.json", 'w') as f:
             json.dump(label_mapping, f, indent=2)
@@ -547,7 +604,7 @@ class ChineseOfficeIntentDatasetCreator:
         print(f"Dataset saved to {output_path}")
         print(f"Training samples: {len(train_df)}")
         print(f"Test samples: {len(test_df)}")
-        print(f"Intents: {len(self.intent_labels)}")
+        print(f"Intents: {len(label_mapping['intent_labels'])}")
         
         # Print sample distribution
         print("\nSample distribution:")
